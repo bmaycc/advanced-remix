@@ -1,5 +1,4 @@
 import type { ActionArgs, LoaderArgs } from "@remix-run/node";
-import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
 import { json } from "@remix-run/node";
 import {
   Link,
@@ -7,15 +6,16 @@ import {
   useFetcher,
   useLoaderData,
   useLocation,
-  useParams,
+  useParams
 } from "@remix-run/react";
+import type { UseDataFunctionReturn } from "@remix-run/react/dist/components";
+import { useEffect, useRef } from "react";
+import invariant from "tiny-invariant";
 import { inputClasses, LabelText, submitButtonClasses } from "~/components";
+import { createDeposit } from "~/models/deposit.server";
 import { getInvoiceDetails } from "~/models/invoice.server";
 import { requireUser } from "~/session.server";
 import { currencyFormatter, parseDate } from "~/utils";
-import { createDeposit } from "~/models/deposit.server";
-import invariant from "tiny-invariant";
-import { useEffect, useRef } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);

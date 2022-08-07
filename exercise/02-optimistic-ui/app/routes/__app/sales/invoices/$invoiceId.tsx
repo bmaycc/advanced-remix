@@ -2,6 +2,7 @@ import type { ActionArgs, LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   Link,
+  useActionData,
   useCatch,
   useFetcher,
   useLoaderData,
@@ -14,6 +15,7 @@ import { requireUser } from "~/session.server";
 import { currencyFormatter, parseDate } from "~/utils";
 import { createDeposit } from "~/models/deposit.server";
 import invariant from "tiny-invariant";
+import { useEffect, useRef } from "react";
 
 export async function loader({ request, params }: LoaderArgs) {
   await requireUser(request);
@@ -152,7 +154,27 @@ export default function InvoiceRoute() {
 function Deposits() {
   const data = useLoaderData<typeof loader>();
   const newDepositFetcher = useFetcher();
+  const formRef = useRef<HTMLFormElement>(null);
   // 🐨 create a ref for the form (so we can reset it once the submission is finished)
+
+  type Deposit = typeof data["deposits"][number];
+
+  let deposits: Deposit[] = [...data.deposits];
+  const depositAmount = Number(newDepositFetcher.submission?.formData.get("amount"))
+  const depositDate = newDepositFetcher.submission?.formData.get("depositDate");
+  if (typeof depositAmount === "number" && typeof depositDate === "string") {
+    deposits.push({
+      amount: depositAmount,
+      depositDateFormatted: parseDate(depositDate).toLocaleDateString(),
+      id: `Optimistic!`,
+    });
+  }
+
+  useEffect(() => {
+    if (newDepositFetcher.state === "idle") {
+      formRef.current?.reset();
+    }
+  }, [newDepositFetcher.state]);
 
   // 🐨 create a deposits array that includes the user's submission
   // 💰 you can get the user's submission via newDepositFetcher.submission
@@ -165,9 +187,9 @@ function Deposits() {
     <div>
       <div className="font-bold leading-8">Deposits</div>
       {/* 🐨 swap this for your optimistic deposits array */}
-      {data.deposits.length > 0 ? (
+      {deposits.length > 0 ? (
         // 🐨 swap this for your optimistic deposits array
-        data.deposits.map((deposit) => (
+        deposits.map((deposit) => (
           <div key={deposit.id} className={lineItemClassName}>
             <Link
               to={`../../deposits/${deposit.id}`}
@@ -182,6 +204,7 @@ function Deposits() {
         <div>None yet</div>
       )}
       <newDepositFetcher.Form
+        ref={formRef}
         method="post"
         className="grid grid-cols-1 gap-x-4 gap-y-2 lg:grid-cols-2"
         // 🐨 add your form ref here

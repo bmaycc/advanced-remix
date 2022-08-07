@@ -1,5 +1,6 @@
 import type { LinksFunction, LoaderArgs, MetaFunction } from "@remix-run/node";
 import { json } from "@remix-run/node";
+import type { ShouldReloadFunction } from "@remix-run/react";
 import {
   Links,
   LiveReload,
@@ -36,6 +37,12 @@ export async function loader({ request }: LoaderArgs) {
     user: await getUser(request),
   });
 }
+
+export const unstable_shouldReload: ShouldReloadFunction = ({ submission }) => {
+  return (
+    !!submission?.action && ["/login", "/logout"].includes(submission.action)
+  );
+};
 
 export default function App() {
   const { user } = useLoaderData<typeof loader>();
